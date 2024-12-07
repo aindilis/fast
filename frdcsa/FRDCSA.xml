@@ -1,0 +1,136 @@
+<system>
+  <title>
+    FAST
+    <!-- What it is called. Short. Easy to remember. Relevant. -->
+  </title>
+  <acronym-expansion>
+    Field Agent Support Technology
+    <!-- If it is an acronym, what does it expand to? -->
+  </acronym-expansion>
+  <slogan>
+    <!-- What if any is the slogan? -->
+  </slogan>
+  <pi>
+    <!-- Who is Principle Investigator? -->
+  </pi>
+  <short-description>
+    Provide the user with a remote backup heterogeneous team
+    consisting of humans and AI agents
+    <!-- "This system is a system that ..."
+
+	 Syntactic  controls: The $title  system is  a (system  for)? "..."
+	 Tag line, under 70 characters, do not puncuate end.
+	 
+	 Semantic controls:  Purpose of  short-description is to  provide a
+	 one  line  summary that  gives  some  indication  of the  system's
+	 capabilities  for  things  like  apt.   It is  equivalent  to  the
+	 short-desc from the Debian control file.
+
+	 QUOTED FROM DEBIAN POLICY
+
+	 3.4.1 The single line synopsis
+
+	 The single line synopsis should be kept brief - certainly under 80
+	 characters.
+
+	 Do not include the package  name in the synopsis line. The display
+	 software knows how to display this already, and you do not need to
+	 state it. Remember  that in many situations the  user may only see
+	 the synopsis line - make it  as informative as you can.
+
+	 (Answers question .)
+    -->
+  </short-description>
+  <medium-description>
+    The FAST project will be helpful in providing agents with the
+    intelligence necessary to comport themselves well in a variety of
+    settings - for instance, social.  Agents using this technology
+    will thus be extraordinarily informed on many topics.
+    <!-- Similar to extended description for Debian.
+	 
+	 QUOTED FROM DEBIAN POLICY
+
+	 3.4.2 The extended description
+
+	 Do not try to continue  the single line synopsis into the extended
+	 description.  This   will  not   work  correctly  when   the  full
+	 description  is  displayed, and  makes  no  sense  where only  the
+	 summary (the single line synopsis) is available.
+
+	 The extended description should describe what the package does and
+	 how  it relates  to  the rest  of  the system  (in  terms of,  for
+	 example, which subsystem it is which part of).
+
+	 The description field  needs to make sense to  anyone, even people
+	 who  have  no idea  about  any of  the  things  the package  deals
+	 with.[6]
+    -->
+    <summary>
+      <!-- What does the system do? -->
+    </summary>
+    <relationship>
+      <!-- What is the relation to the rest of the FRDCSA? -->
+    </relationship>
+    <lay-description>
+      <!-- Give a non-technical description of what the system does. -->
+    </lay-description>
+  </medium-description>
+  <long-description>
+    The goal of this project is to assemble a physical and software
+    system whereby several operators can monitor the audio visual
+    environment of a field agent and provide real-time intelligence
+    support.  The system would consist of n field agents, and m human
+    operators and o ai agent operators.
+    
+    For instance, if the agent was engaged in a conversation, the
+    audio stream would be wirelessly transmitted to the base station.
+    Either a person or a speech recognition software package, or both,
+    would transcribe the speech to text.  The operators and their
+    software agents would then perform searches using their stations
+    and provide relevant information, or possible replies in various
+    places.  A hierarchy of feedback operators would then choose the
+    best responses, ultimately selecting one which would be
+    transmitted back to the field agent.
+    <intro>
+      <!-- Long  description goes on  the codebase  website as  the Project
+	   Description.  One  or more  paragraphs that gives  very detailed
+	   information about the project or codebase.
+      -->
+    </intro>
+    <provides>
+      <!-- What does package do technically? -->
+      <capability>
+      </capability>
+    </provides>
+    <usecases>
+      <!-- What are some scenarios/projects for its use? -->
+      <usecase>
+      </usecase>
+    </usecases>
+    <relationships>
+      <!-- What is the technical relation to FRDCSA subsystems? -->
+      <subsystems>
+      </subsystems>
+      <supersystems>
+      </supersystems>
+      <package-dependencies>
+	<!-- What Debian packages does this depend on? -->
+      </package-dependencies>
+      <other-dependencies>
+	<!-- What codebases does this depend on? -->
+      </other-dependencies>
+    </relationships>
+    <technical-description>
+      <!-- Give a detailed technical description. -->
+    </technical-description>
+    <relevant-information>
+      <!-- Give any other relevant information. -->
+    </relevant-information>
+    <conclusion>
+    </conclusion>
+    <links>
+      <link>
+      </link>
+    </links>
+  </long-description>
+</system>

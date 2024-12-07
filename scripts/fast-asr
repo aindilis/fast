@@ -1,0 +1,243 @@
+#!/usr/bin/env perl
+
+use FAST::Util::LLMClientClient;
+use Manager::Dialog qw(ApproveCommands);
+
+use Data::Dumper;
+use String::ShellQuote qw(shell_quote);
+
+use strict;
+use warnings;
+use Expect;
+use JSON;
+use Time::HiRes qw(time sleep);
+
+# Configuration
+my $TRANSCRIBE_CMD = "<REDACTED>/start-echelon.pl";
+my $TIMEOUT = 10;
+my $RESPONSE_DELAY_THRESHOLD = 1.5; # seconds to wait before suggesting response
+
+# Dialog history structure
+my @dialog_history = ();
+my $last_utterance_time = time();
+
+sub tts {
+  my (%args) = @_;
+  my $commands =
+    [
+     'espeak -s 250 -v mb-en1 '.shell_quote($args{Text}).' -w /dev/shm/fast-espeak.wav',
+     '/usr/bin/mplayer /dev/shm/fast-espeak.wav &',
+    ];
+  ApproveCommands
+    (
+     Commands => $commands,
+     AutoApprove => 1,
+    );
+}
+
+sub strip_color_codes {
+  my ($text) = @_;
+
+  # Strip standard ANSI color escape sequences
+  # Matches sequences like:
+  # \e[0m (reset)
+  # \e[31m (red)
+  # \e[1;32m (bold green)
+  # \e[38;5;208m (256-color mode)
+  # \e[48;2;255;100;0m (RGB true color)
+  $text =~ s/\e\[[\d;]*[mK]//g;
+
+  # Strip older style color codes
+  # \033 is octal for escape character (\e)
+  $text =~ s/\033\[[\d;]*[mK]//g;
+
+  # Strip xterm's 256 color codes
+  $text =~ s/\e\[38;5;\d+m//g;	# Foreground
+  $text =~ s/\e\[48;5;\d+m//g;	# Background
+
+  # Strip RGB true color codes
+  $text =~ s/\e\[38;2;\d+;\d+;\d+m//g; # Foreground RGB
+  $text =~ s/\e\[48;2;\d+;\d+;\d+m//g; # Background RGB
+
+  return $text;
+}
+
+sub strip_escape_sequences {
+  my ($text) = @_;
+
+  # Strip all ASCII escape sequences
+  # This includes:
+  # \e[ - CSI (Control Sequence Introducer)
+  # \e] - OSC (Operating System Command)
+  # \e% - Character set selection
+  # \e# - Screen alignment test
+  # \e( and \e) - Character set designation
+  # And various other escape sequences
+
+  # Remove CSI sequences (ESC [)
+  $text =~ s/\e\[[\d;?]*[@-~]//g;
+
+  # Remove OSC sequences (ESC ])
+  $text =~ s/\e\].*?(\e\\|\007)//g;
+
+  # Remove other escape sequences
+  $text =~ s/\e[PX^_].*?(\e\\|\007)//g;	# Device control strings
+  $text =~ s/\e[()#%][@-~]//g;		# Single character sequences
+  $text =~ s/\e[@-Z\\-_]//g;		# Two character sequences
+
+  # Remove any remaining escape character
+  $text =~ s/\e//g;
+  $text =~ s/\033//g;		# Octal representation
+
+  return $text;
+}
+
+# Process dialog history and generate response suggestions
+sub process_dialog_history {
+  my ($history) = @_;
+  my $current_time = time();
+
+  # Convert to JSON for logging/debugging
+  my $json = JSON->new->pretty->encode($history);
+
+  print "\n=== Processing Dialog History ===\n" if $UNIVERSAL::debug;
+  print $json . "\n" if $UNIVERSAL::debug;
+
+  # Get the last utterance
+  my $last_utterance = $history->[-1];
+
+  # If enough time has passed since last utterance, generate response
+  if ($current_time - $last_utterance_time >= $RESPONSE_DELAY_THRESHOLD) {
+    generate_response_suggestion($history);
+  }
+
+  $last_utterance_time = $current_time;
+}
+
+# Generate response suggestions
+sub generate_response_suggestion {
+  my ($history) = @_;
+
+  # Here you would integrate with your preferred AI model
+  # This is a placeholder for the actual implementation
+  my $dialog_history = '';
+  $dialog_history .= "\n=== Response Suggestion ===\n";
+  $dialog_history .=  "Context: Last few utterances:\n";
+
+  # Get last 10 utterances for context
+  my @recent_context = @{$history}[-10..-1];
+  foreach my $utterance (@recent_context) {
+    if (defined $utterance and exists $utterance->{utterance}) {
+      $dialog_history .=  "- " . $utterance->{utterance} . "\n";
+    }
+  }
+
+  # Placeholder for AI response generation
+  $dialog_history .=  "\nSuggested responses would appear here\n";
+  $dialog_history .=  "==========================\n\n";
+
+  # In the real implementation, you might:
+  # 1. Call an AI model API
+  # 2. Format the response for audio output
+  # 3. Queue the audio for playback in earbuds
+  print $dialog_history."\n";
+  my $res1 = GetLLMResponse
+    (
+     DialogHistory => $dialog_history,
+     Action => 'fastRetort',
+    );
+  print Dumper({Res1Res1 => $res1}) if $UNIVERSAL::debug;
+  if ($res1->{Success}) {
+    my $response = $res1->{Results}->Data->{Result};
+    print "SUGGESTED RESPONSE: <<< ".$response." >>>\n\n";
+    tts(Text => $response);
+  }
+}
+
+# Function to add utterance to history
+sub add_utterance {
+  my ($text) = @_;
+
+  my $utterance = {
+		   utterance => $text,
+		   timestamp => time(),
+		   metadata => {
+				is_user => 0, # Flag for whether this is the FAST user speaking
+				context_tags => [], # For tracking conversation context
+				social_cues => { # For tracking social dynamics
+						# tone => "",
+						# urgency => "",
+						# emotional_state => ""
+					       },
+				response_metrics => { # For tracking system performance
+						     response_time => undef,
+						     was_helpful => undef,
+						     user_followed_suggestion => undef
+						    }
+			       }
+		  };
+
+  push @dialog_history, $utterance;
+  process_dialog_history(\@dialog_history);
+}
+
+# Create Expect object
+my $exp = Expect->spawn($TRANSCRIBE_CMD) or die "Cannot spawn command: $!\n";
+
+my $proceed = 0;
+while (1) {
+  my $match = $exp->expect(
+			   $TIMEOUT,
+			   [
+			    qr/\.{3,}/ => sub {
+			      # Ignore progress dots
+			      return;
+			    }
+			   ],
+			   [
+			    qr/Transcribing\.\./ => sub {
+			      print "[System] Processing speech...\n";
+			    }
+			   ],
+			   [
+			    qr/^\s*(.+?)\s*$/ => sub {
+			      my $exp = shift;
+			      my $text = $exp->match;
+			      return if $text =~ /^\.+$/ || $text =~ /^Transcribing\.\.$/;
+			      $text =~ s/^\s+|\s+$//g;
+			      $text = strip_escape_sequences($text);
+			      print "TEXT: $text\n";
+			      if ($text) {
+				if ($proceed
+				    # and
+				    # $text !~ /HTTPSConnection object at .*? Failed to establish a new connection: \[Errno -2\] Name or service not known/ and
+				    # $text !~ /kill: \(\d+\): No such process/ and
+				    # $text !~ /An error occured while synchronizing the model/ and
+				    # $text ne '(Ctrl+C to Quit)'
+				   ) {
+				  print "[Transcript] $text\n";
+				  add_utterance($text);
+				} elsif ($text =~ /ready player one/i) {
+				  $proceed = 1;
+				  print "Let the games begin!\n";
+				}
+			      }
+			    }
+			   ],
+			   [
+			    timeout => sub {
+			      # Silent timeout handling for smoother operation
+			      return;
+			    }
+			   ],
+			   [
+			    eof => sub {
+			      print "[System] Session ended.\n";
+			      exit;
+			    }
+			   ]
+			  );
+}
+
+$exp->soft_close();
+

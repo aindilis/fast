@@ -1,0 +1,19 @@
+#!/usr/bin/env perl
+
+use FAST;
+
+use UniLang::Agent::Agent;
+use UniLang::Util::Message;
+
+$UNIVERSAL::agent = UniLang::Agent::Agent->new
+  (Name => "FAST",
+   ReceiveHandler => \&Receive);
+$UNIVERSAL::fast = FAST->new();
+
+sub Receive {
+  my %args = @_;
+  $UNIVERSAL::fast->ProcessMessage
+    (Message => $args{Message});
+}
+
+$UNIVERSAL::fast->Execute();
